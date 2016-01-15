@@ -9,7 +9,7 @@ disable_interrupts:
 	msr	cpsr_cxsf, r0
 
 relocate_stack:
-        ldr     r0, =0x7000bffc // stack_start
+        ldr     r0, =0x70009ffc // stack_start
 	mov     sp, r0
 
 print_welcome_banner:

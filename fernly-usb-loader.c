@@ -19,7 +19,7 @@
 #define STAGE_2_WRITE_SIZE 1
 #define STAGE_3_WRITE_ALL_AT_ONCE 1 /* Write stage 3 in one write() */
 #define STAGE_3_WRITE_SIZE 1
-#define FERNLY_USB_LOADER_ADDR 0x7000c000
+#define FERNLY_USB_LOADER_ADDR 0x7000a000
 
 #define ASSERT(x) do { if ((x)) exit(1); } while(0)
 

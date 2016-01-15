@@ -2,10 +2,10 @@
 
 .global reset
 reset:
-	ldr	r0, =0x7000cffc // stack_start
+	ldr	r0, =0x7000affc // stack_start
 	mov	sp, r0
 	mov	r2, #0xffffffff
-	ldr	r1, =0x7000c000 // stack_end
+	ldr	r1, =0x7000a000 // stack_end
 
 clear_stack:
 	cmp	r1, r0
