@@ -940,7 +940,7 @@ int fernvale_set_serial(int serfd) {
 	ret = tcsetattr(serfd, TCSANOW, &t);
 	if (-1 == ret) {
 		perror("Failed to set attributes");
-		exit(1);
+		//exit(1);
 	}
 
 	return 0;
@@ -1728,7 +1728,7 @@ int main(int argc, char **argv) {
 		ret = tcsetattr(1, TCSANOW, &t);
 		if (-1 == ret) {
 			perror("Failed to set attributes");
-			exit(1);
+			//exit(1);
 		}
 
 		if (logname) {
