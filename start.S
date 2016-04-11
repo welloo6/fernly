@@ -8,10 +8,10 @@ reset:
 	ldr	r1, =0x7000a000 // stack_end
 
 clear_stack:
-	cmp	r1, r0
-	str	r2, [r0]
-	sub	r0, r0, #4
-	bcc	clear_stack
+#	cmp	r1, r0
+#	str	r2, [r0]
+#	sub	r0, r0, #4
+#	bcc	clear_stack
 
 ## Copy 0x10000 bytes from =spi_offset to psram at 0x3460
 #copy_code_to_ram:

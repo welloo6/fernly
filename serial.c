@@ -153,7 +153,9 @@ void serial_init(void)
 
 #include "fernvale-usb.h"
 
-static volatile uint8_t *recv_bfr = (uint8_t *)0x70000000;
+#define XXX_USB_EP1_MAX_RECV 16
+static uint8_t recv_bfr[XXX_USB_EP1_MAX_RECV];
+// static volatile uint8_t *recv_bfr = (uint8_t *)0x70000000;
 static int recv_size = 0;
 static int recv_offset = 0;
 static int send_max = 0;
@@ -202,6 +204,7 @@ static void usb_flush_output(int epnum)
 	send_cur = 0;
 }
 
+#if 0
 static void usb_receive_wait(uint8_t epnum)
 {
 	uint32_t fifo_register = USB_CTRL_EP0_FIFO_DB0 + (epnum * 4);
@@ -262,6 +265,7 @@ static void usb_handle_irqs(int epnum)
 	if (readb(USB_CTRL_EP_OUTCSR1) & USB_CTRL_EP_OUTCSR1_RXPKTRDY)
 		usb_receive_wait(epnum);
 }
+#endif
 
 int serial_putc(uint8_t c)
 {
@@ -275,7 +279,54 @@ int serial_putc(uint8_t c)
 	return 0;
 }
 
-uint8_t serial_getc(void)
+static void usb_get_handle_irqs()
+{
+	uint8_t r4, r6;
+	uint8_t *buffer;
+	int count;
+
+	/* Poll interrupt status registers */
+	r6 = readb(USB_CTRL_INTRUSB);
+	(void) readb(USB_CTRL_INTRIN);
+	r4 = readb(USB_CTRL_INTROUT);
+
+	if (r6 & USB_CTRL_INTRUSB_RESET) {
+		writeb(0x80, USB_CTRL_RSTCTRL);
+		writeb(0, USB_CTRL_RSTCTRL);
+		writeb(USB_CTRL_POWER_SUSPENAB | USB_CTRL_POWER_SWRSTENAB, USB_CTRL_POWER);
+		writeb(0, USB_CTRL_INTRINE);
+		writeb(0, USB_CTRL_INTROUTE);
+		writeb(0, USB_CTRL_INTRUSBE);
+		writeb(USB_CTRL_INTRUSBE_SUSPEND_ENABLE |
+			USB_CTRL_INTRUSBE_RESUME_ENABLE |
+			USB_CTRL_INTRUSBE_RESET_ENABLE, USB_CTRL_INTRUSBE);
+		writeb(readb(USB_CTRL_INTRINE) | USB_CTRL_INTRINE_EP0_ENABLE, USB_CTRL_INTRINE);
+	}
+
+	if (r4 & USB_CTRL_INTROUT_EP1_OUT) {
+
+		/* Select EP1 */
+		writeb(1, USB_CTRL_INDEX);
+
+		/* Get EP1 byte count */
+		if (readb(USB_CTRL_EP_OUTCSR1) & USB_CTRL_EP_OUTCSR1_RXPKTRDY) {
+			recv_size = readb(USB_CTRL_EP0_COUNT);
+			recv_offset = 0;
+		}
+
+		/* Read EP1 data FIFO */
+		buffer = recv_bfr;
+		count = recv_size;
+		while (count--)
+			*buffer++ = readb(USB_CTRL_EP1_FIFO_DB0);
+
+		/* Clear EP1 status */
+		writeb(0, USB_CTRL_EP_OUTCSR1);
+	}
+}
+
+#if 0
+uint8_t serial_getc_XXX(void)
 {
 	/* Wait for data if the buffer is empty */
 	while (!recv_size)
@@ -284,10 +335,22 @@ uint8_t serial_getc(void)
 	recv_size--;
 	return recv_bfr[recv_offset++];
 }
+#endif
+
+uint8_t serial_getc(void)
+{
+	/* Wait for data if the buffer is empty */
+	while (!recv_size)
+		usb_get_handle_irqs();
+
+	recv_size--;
+	return recv_bfr[recv_offset++];
+}
 
 int serial_available(void)
 {
-	usb_handle_irqs(1);
+//	usb_handle_irqs(1);
+	usb_get_handle_irqs();
 	return recv_size != 0;
 }
 
@@ -365,7 +428,8 @@ void serial_init(void)
 
 	recv_offset = 0;
 	recv_size = 0;
-	usb_handle_irqs(1);
+//	usb_handle_irqs(1);
+	usb_get_handle_irqs();
 }
 
 #else /* SERIAL_USB || SERIAL_UART */

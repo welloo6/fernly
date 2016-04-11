@@ -13,12 +13,15 @@
 #if !defined(AUTOMATED)
 #define PROMPT "fernly> "
 
+int	rom_getchar(void);
+
 static int serial_get_line(char *bfr, int len)
 {
        int cur = 0;
 
        while (cur < len) {
                bfr[cur] = serial_getc();
+//               bfr[cur] = rom_getchar();
                serial_putc(bfr[cur]);
 
                /* Carriage Return */
@@ -84,6 +87,7 @@ static int serial_get_line(char *bfr, int len)
 }
 #endif
 
+#if 0
 static int list_registers(void)
 {
 	int var;
@@ -211,6 +215,7 @@ static int do_init(void)
 
 	return 0;
 }
+#endif
 
 #ifdef AUTOMATED
 static inline int get_hex(int bytes)
@@ -396,6 +401,7 @@ static const struct {
 		.name = "irq",
 		.help = "Manipulate IRQs",
 	},
+
 	{
 		.func = cmd_spi,
 		.name = "spi",
@@ -426,6 +432,7 @@ static const struct {
 		.name = "lcd",
 		.help = "Manipulate the LCD",
 	},
+
 	{
 		.func = cmd_load,
 		.name = "load",
@@ -437,6 +444,7 @@ static const struct {
 		.help = "Load data to a specific area in memory, "
 			"then jump to it",
 	},
+
 	{
 		.func = cmd_keypad,
 		.name = "keypad",
@@ -459,6 +467,7 @@ int cmd_help(int argc, char **argv)
 	return 0;
 }
 
+#if 1
 static int shell_run_command(char *line)
 {
 	char *lp, *cmd, *tokp;
@@ -488,24 +497,36 @@ static int shell_run_command(char *line)
 
 	return 0;
 }
+#endif
 
 static int loop(void)
 {
+
 	char line[256];
 
 	serial_puts(PROMPT);
 	serial_get_line(line, sizeof(line));
 	printf("\n");
 	return shell_run_command(line);
+	return 0;
 }
 #endif /* ! AUTOMATED */
 
 int main(void)
 {
-	do_init();
+//	do_init();
+
+	serial_init();
+
+	serial_puts("\nhi there\n");
+	serial_puts("will try to enable psram now\n");
+	scriptic_run("set_plls");
+	scriptic_run("enable_psram");
 
 	while (1)
 		loop();
 
-	return 0;
+	return 0x55AA55AA;
 }
+
+

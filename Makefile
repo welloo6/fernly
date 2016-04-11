@@ -1,12 +1,18 @@
 include mkenv.mk
 include magic.mk
 
+# isogashii:
+BUILD = build
+CROSS_COMPILE=arm-none-eabi-
+
 CFLAGS = -march=armv5te -mfloat-abi=soft -Wall \
-	 -Os -ggdb -Iinclude -marm -fno-stack-protector
+	 -Os -Iinclude -marm -fno-stack-protector
 AFLAGS = 
 
 LDFLAGS = --nostdlib -T fernvale.ld
 LIBS = lib/libgcc-armv5.a
+
+STAGE1_LDFLAGS = --nostdlib -T stage1.ld
 
 SRC_C = \
 	bionic.c \
@@ -42,7 +48,19 @@ SRC_S = \
 
 OBJ = $(addprefix $(BUILD)/, $(SRC_S:.S=.o) $(SRC_C:.c=.o))
 
+STAGE1_SRC_C = \
+	stage1.c \
+	serial.c \
+	vectors.c
+
+STAGE1_SRC_S = \
+	start.S
+
+STAGE1_OBJ = $(addprefix $(BUILD)/, $(STAGE1_SRC_S:.S=.o) $(STAGE1_SRC_C:.c=.o))
+
 all: $(BUILD)/firmware.bin \
+	$(BUILD)/stage1.bin \
+	$(BUILD)/dump-rom-usb.bin \
 	$(BUILD)/usb-loader.bin \
 	$(BUILD)/mt6261-test.bin \
 	$(BUILD)/fernly-usb-loader
@@ -61,6 +79,12 @@ $(BUILD)/firmware.bin: $(BUILD)/firmware.elf
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(LD) $(LDFLAGS) --entry=reset_handler -o $@ $(OBJ) $(LIBS)
+
+$(BUILD)/stage1.bin: $(BUILD)/stage1.elf
+	$(OBJCOPY) -S -O binary $(BUILD)/stage1.elf $@
+
+$(BUILD)/stage1.elf: $(STAGE1_OBJ)
+	$(LD) $(STAGE1_LDFLAGS) --entry=reset_handler -o $@ $(STAGE1_OBJ) $(LIBS)
 
 $(OBJ): $(HEADER_BUILD)/generated.h | $(OBJ_DIRS)
 $(HEADER_BUILD)/generated.h: | $(HEADER_BUILD)

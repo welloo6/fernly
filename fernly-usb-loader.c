@@ -19,7 +19,7 @@
 #define STAGE_2_WRITE_SIZE 1
 #define STAGE_3_WRITE_ALL_AT_ONCE 1 /* Write stage 3 in one write() */
 #define STAGE_3_WRITE_SIZE 1
-#define FERNLY_USB_LOADER_ADDR 0x7000a000
+#define FERNLY_USB_LOADER_ADDR 0x70009000
 
 #define ASSERT(x) do { if ((x)) exit(1); } while(0)
 
@@ -937,6 +937,8 @@ int fernvale_set_serial(int serfd) {
 	cfsetispeed(&t, BAUDRATE);
 	cfsetospeed(&t, BAUDRATE);
 	cfmakeraw(&t);
+	t.c_cc[VMIN] = 0;
+	t.c_cc[VTIME] = 100;	// timeout in deciseconds.. that's 10 sec
 	ret = tcsetattr(serfd, TCSANOW, &t);
 	if (-1 == ret) {
 		perror("Failed to set attributes");
@@ -956,7 +958,9 @@ static int fernvale_wait_banner(int fd, const char *banner, int banner_size) {
 	int i;
 
 	while (1 == read(fd, &buf[offset], 1)) {
-		
+
+		printf("%c", buf[offset]);
+
 		tst = (offset + 1) % sizeof(buf);
 		
 		i = 0;
@@ -1459,12 +1463,14 @@ static void cmd_end_fmt(const char *fmt, ...) {
 
 static void print_help(const char *name)
 {
-	printf("Usage: %s [-l logfile] [-s] [serial port] "
+	printf("Usage: %s [-a address] [-l logfile] [-s] [serial port] "
 			"[stage 1 bootloader] "
 			"[[stage 2 bootloader]] "
 			"[payload]\n", name);
 	printf("\n");
 	printf("Arguments:\n");
+	printf("    -a [address]      Set load address for stage 1 bootloader (default: 0x%x)\n",
+		FERNLY_USB_LOADER_ADDR);
 	printf("    -l [logfile]      Log boot output to the specified file\n");
 	printf("    -w                Wait for serial port to appear\n");
 	printf("    -s                Enter boot shell\n");
@@ -1482,7 +1488,7 @@ static void print_help(const char *name)
 }
 
 int main(int argc, char **argv) {
-	int serfd, binfd, s1blfd, payloadfd = -1, logfd = -1;
+	int serfd, binfd = -1, s1blfd, payloadfd = -1, logfd = -1;
 	char *logname = NULL;
 	uint32_t ret;
 	int opt;
@@ -1490,8 +1496,14 @@ int main(int argc, char **argv) {
 	int wait_serial = 0;
 	int factory_test = 0;
 
-	while ((opt = getopt(argc, argv, "hl:swt")) != -1) {
+	uint32_t usb_loader_addr = FERNLY_USB_LOADER_ADDR;
+
+	while ((opt = getopt(argc, argv, "a:hl:swt")) != -1) {
 		switch(opt) {
+
+		case 'a':
+			usb_loader_addr = strtoul(optarg, NULL, 0);
+			break;
 
 		case 'l':
 			logname = strdup(optarg);
@@ -1521,7 +1533,8 @@ int main(int argc, char **argv) {
 	argc -= (optind - 1);
 	argv += (optind - 1);
 
-	if ((argc != 4) && (argc != 5)) {
+	if ((argc != 3) && (argc != 4) && (argc != 5)) {
+                printf("%d is wrong # of args\n", argc);
 		exit(1);
 	}
 
@@ -1554,10 +1567,12 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	binfd = open(argv[3], O_RDONLY);
-	if (-1 == binfd) {
-		perror("Unable to open firmware file");
-		exit(1);
+	if (argc == 4 || argc == 5) {
+		binfd = open(argv[3], O_RDONLY);
+		if (-1 == binfd) {
+			perror("Unable to open firmware file");
+			exit(1);
+		}
 	}
 
 	if (argc == 5) {
@@ -1681,20 +1696,30 @@ int main(int argc, char **argv) {
 	cmd_end_fmt("0x%04x", ret);
 
 	cmd_begin("Loading Fernly USB loader");
-	ASSERT(fernvale_cmd_send_fd(serfd, FERNLY_USB_LOADER_ADDR, s1blfd));
+	ASSERT(fernvale_cmd_send_fd(serfd, usb_loader_addr, s1blfd));
 	cmd_end();
 
 	cmd_begin("Executing Ferly USB loader");
-	ASSERT(fernvale_cmd_jump(serfd, FERNLY_USB_LOADER_ADDR));
+	ASSERT(fernvale_cmd_jump(serfd, usb_loader_addr));
 	cmd_end();
 
 	cmd_begin("Waiting for Fernly USB loader banner");
 	ASSERT(fernvale_wait_banner(serfd, ">", 1));
 	cmd_end();
 
-	cmd_begin("Writing stage 2");
-	ASSERT(fernvale_write_stage2(serfd, binfd));
-	cmd_end();
+	if (binfd == -1) {
+		close(serfd);
+		return 0;
+	}
+
+// you can change this to "#if 0" during testing, at times when
+// you don't expect or need Fernly USB loader to actually work
+#if 1
+	if (binfd != -1) {
+		cmd_begin("Writing stage 2");
+		ASSERT(fernvale_write_stage2(serfd, binfd));
+		cmd_end();
+	}
 
 	if (factory_test) {
 		cmd_begin("Starting factory test");
@@ -1714,6 +1739,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (shell) {
+		cmd_begin("Start Fernly shell");
 		uint8_t bfr;
 		int ret;
 		struct termios t;
@@ -1762,6 +1788,8 @@ int main(int argc, char **argv) {
 			if (FD_ISSET(STDIN_FILENO, &rfds)) {
 				if (1 != read(STDIN_FILENO, &bfr, sizeof(bfr)))
 					break;
+				if (bfr == 0x3)
+					break;
 				write(serfd, &bfr, sizeof(bfr));
 			}
 		}
@@ -1771,6 +1799,8 @@ int main(int argc, char **argv) {
 		fernvale_wait_banner(serfd, prompt, strlen(prompt));
 		cmd_end();
 	}
+#endif
+
 	close(serfd);
 	return 0;
 }
