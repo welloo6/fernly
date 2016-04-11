@@ -1712,9 +1712,6 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
-// you can change this to "#if 0" during testing, at times when
-// you don't expect or need Fernly USB loader to actually work
-#if 1
 	if (binfd != -1) {
 		cmd_begin("Writing stage 2");
 		ASSERT(fernvale_write_stage2(serfd, binfd));
@@ -1799,7 +1796,6 @@ int main(int argc, char **argv) {
 		fernvale_wait_banner(serfd, prompt, strlen(prompt));
 		cmd_end();
 	}
-#endif
 
 	close(serfd);
 	return 0;
