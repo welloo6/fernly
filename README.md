@@ -34,30 +34,30 @@ except that the command would be:
 
     build/fernly-usb-loader -s /dev/fernvale build/stage1.bin build/firmware.bin
 
-Stage1.bin uses Fernly's own USR serial I/O code instead of calling ROM
-routines, allowing Fernly to load at address 0x70000000 at the bottom of
+Stage1.bin uses Fernly's own USB serial I/O code instead of calling ROM
+routines, allowing Fernly to load at address 0x70000000, the bottom of
 RAM. This is helpful-bordering-on-necessary because of the size of Fernly
 and the smaller RAM capacity of the MT6261 compared to the 6260. The ROM
-routines can't load this low because that area is used for their buffer
-memory and program variables.
+routines can't load a program this low because that area is used for their
+buffer memory and program variables.
 
-To capture the contents of ROM, run the command:
+To capture the contents of device ROM, run the command:
 
     build/fernly-usb-loader /dev/fernvale build/dump-rom-usb.bin
 
 Capture the output to a text file, edit out the diagnostic lines from
 fernly-usb-loader, prepend the one line:
 
-data = [
+    data = [
 
 and append the six lines:
 
-]
-
-f = open('rom.bin','wb')
-for s in data:
-  f.write(chr(int(s,16)))
-f.close()
+    ]
+    
+    f = open('rom.bin','wb')
+    for s in data:
+      f.write(chr(int(s,16)))
+    f.close()
 
 Save it as a file with a ".py" suffix and run it as a Python script.
 It will save the binary rom image as the file "rom.bin".
