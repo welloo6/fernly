@@ -29,7 +29,8 @@ load_program:
 # off of USB, we are only interested in the USB thunks.
 # The prototype for this function is:
 #	void usb_uart_read(void *buffer, int bytes, int timeout)
-	ldr	r3, =0xfff03639
+#	ldr	r3, =0xfff03639
+	ldr	r3, =0xfff00b65
 	blx	r3
 
 	ldr	r1, size_buffer
@@ -40,7 +41,8 @@ load_program:
 	mov	r0, #0x70000000
 	orr	r0, r0, #0x6000
 	mvn	r2, #0
-	ldr	r3, =0xfff03639
+#	ldr	r3, =0xfff03639
+	ldr	r3, =0xfff00b65
 	blx	r3
 
 jump_to_new_program:
@@ -73,12 +75,14 @@ uart_puts_print:
 
 # Call:
 # void usb_uart_write(char *data, int bytes, int timeout)
-	ldr	r3, =0xfff03653
+#	ldr	r3, =0xfff03653
+	ldr	r3, =0xfff00b7f
 	blx	r3
 
 # Call:
 # void usb_uart_flush(void)
-	ldr	r3, =0xfff04845
+#	ldr	r3, =0xfff04845
+	ldr	r3, =0xfff01cb1
 	blx	r3
 
 uart_puts_exit:
