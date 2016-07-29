@@ -1579,6 +1579,15 @@ int main(int argc, char **argv) {
 	cmd_begin("Getting hardware version");
 	cmd_end_fmt("0x%04x", fernvale_read_reg16(serfd, mtk_config_offset));
 
+// CRAIG Hack to see what comes back for each "cmd"
+/*
+	uint8_t i;
+	for(i=0; i<0xff; i++) {
+		fernvale_send_cmd(serfd, i);
+	}
+	return;
+*/
+
 	cmd_begin("Getting chip ID");
 	cmd_end_fmt("0x%04x", fernvale_read_reg16(serfd, mtk_config_offset + 8));
 
