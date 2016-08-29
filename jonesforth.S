@@ -716,16 +716,15 @@ _KEY:
         bx lr                   @ return
 
 1:
-        ldr r3, =currkey
-@ CRAIG TODO replace SWI call to read one char with the fernly/mtk-bootloader USB serial getchar
-        mov r0, #0              @ 1st arg: STDIN
-        ldr r1, =buffer         @ 2nd arg : buffer add
-        str r1, [r3]            @ CURRKEY := BUFFER
-        mov r2, #BUFFER_SIZE    @ 3rd arg : buffer sz
-        mov r7, #__NR_read      @ read syscall flag
-        swi 0                   @ call
-        cmp r0, #0
-        ble 2f                  @ if errors goto 2
+	ldr r0, =currkey	@ arg1=buffer to read into
+	mov r1, #1		@ bytes to read
+	mov r2, #0
+
+@ TODO unistd read returns on newline, uart_read does also? or not? TEST IT with a minimal echo program. 
+
+@ uart_read, uart_puts, repeat
+
+@ todo r1? r0?
         add r1,r0               @ Set bufftop at the end of the word
         ldr r4, =bufftop
         str r1, [r4]            @ update bufftop
@@ -1320,3 +1319,43 @@ return_stack_top:
         .align 12
 buffer:
         .space BUFFER_SIZE
+
+@ uart_read(
+@ r0 address of buffer
+@ r1 bytes to read
+@ r2 timeout (0)
+uart_read:
+	push	{lr}
+	ldr	r3, =0xfff03639
+	blx	r3
+	pop	{pc}
+	
+
+@ uart_puts copied directly from fernly/usb-loader.S
+uart_puts:
+	push	{lr}
+	mov	r3, r0
+	mov	r1, #0
+
+uart_puts_count_chars_loop:
+	ldrb	r2, [r3], #1
+	cmp	r2, #0
+	beq	uart_puts_print
+	add	r1, r1, #1
+	b	uart_puts_count_chars_loop
+uart_puts_print:
+	mvn	r2, #0
+
+# Call:
+# void usb_uart_write(char *data, int bytes, int timeout)
+	ldr	r3, =0xfff03653
+	blx	r3
+
+# Call:
+# void usb_uart_flush(void)
+	ldr	r3, =0xfff04845
+	blx	r3
+
+uart_puts_exit:
+	pop	{pc}
+
