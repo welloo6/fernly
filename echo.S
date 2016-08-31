@@ -19,7 +19,7 @@ echo:
 
 @ read
         adr     r0, buffer
-        mov     r1, =BUFFER_SIZE
+        ldr     r1, =BUFFER_SIZE
         mov     r2, #0          // no timeout
         bl      readline 
 
@@ -34,21 +34,6 @@ echo:
         b      echo
 
 
-        .set BUFFER_SIZE,4096
-        .align 12
-buffer:
-        .space BUFFER_SIZE
-
-        .align	4
-prompt: 
-        .asciz	"\r\necho> "
-
-        .align 4
-newline:     
-        .asciz "\r\n"
-
-.align	4
-
 readline:
 #       void * uart_readline(void *buffer, int max_bytes, int timeout)
 # same as uart_read but will return only up until the first newline character to 
@@ -59,7 +44,7 @@ readline:
 	add	r4, r0, r1  /* r4 = buffer + max_bytes */
         
 @ read 1 char
-readline_loop;
+readline_loop:
         mov     r1, #1      /* read 1 byte at a time */
         ldr     r3, =0xfff03639
         blx     r3
@@ -75,7 +60,8 @@ readline_loop;
 	blt	readline_loop
 	
 readline_exit:
-	strb	r0, #0	/* terminate string */
+        mov     r5, #0
+	strb	r5, r0	/* terminate string */
         pop     {pc}
         
 
@@ -112,3 +98,19 @@ uart_puts_print:
 
 uart_puts_exit:
 	pop	{pc}
+
+        .align 12
+buffer:
+        .space BUFFER_SIZE
+
+        .set BUFFER_SIZE,4096
+        .align	4
+prompt: 
+        .asciz	"\r\necho> "
+
+        .align 4
+newline:     
+        .asciz "\r\n"
+
+.align	4
+
