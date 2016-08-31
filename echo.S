@@ -50,23 +50,32 @@ newline:
 .align	4
 
 readline:
-#       void uart_readline(void *buffer, int max_bytes, int timeout)
+#       void * uart_readline(void *buffer, int max_bytes, int timeout)
 # same as uart_read but will return only up until the first newline character to 
 # simulate unistd read as in jonesforth.
 # puts a zero at the end of the buffer to make it a "string"
+# returns the end of the string read (void *buffer) in r0
         push    {lr}
-        mov     r3, r0      /* r3 has buffer address */
-        mov     r4, r1      /* r4 has max_bytes */
-
+	add	r4, r0, r1  /* r4 = buffer + max_bytes */
         
 @ read 1 char
+readline_loop;
         mov     r1, #1      /* read 1 byte at a time */
-        ldr     r5, =0xfff03639
-        blx     r5
+        ldr     r3, =0xfff03639
+        blx     r3
 
 @ compare byte read to newline char, if so, then add 0 at index+1 and return
 @ else increment index and if less than max_bytes loop to read another byte
-
+	ldrb	r3, [r0]	/* load the byte to compare */
+	cmp	r3, #10 /* newline? */
+	beq	readline_exit
+ 
+	add	r0, r0, #1
+	cmp	r0, r4
+	blt	readline_loop
+	
+readline_exit:
+	strb	r0, #0	/* terminate string */
         pop     {pc}
         
 
