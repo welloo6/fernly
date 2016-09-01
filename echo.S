@@ -1,4 +1,5 @@
 .text
+.set BUFFER_SIZE,4096
 
 .global _start
 _start:
@@ -33,7 +34,22 @@ echo:
 @ loop
         b      echo
 
+        .ltorg   /* literal pool within 4k of relocate_stack above?! */
+        .align	4
+prompt: 
+        .asciz	"\r\necho> "
 
+        .align 4
+newline:     
+        .asciz "\r\n"
+
+        .align 4
+buffer:
+        .space BUFFER_SIZE
+
+
+
+        .align 12
 readline:
 #       void * uart_readline(void *buffer, int max_bytes, int timeout)
 # same as uart_read but will return only up until the first newline character to 
@@ -61,8 +77,10 @@ readline_loop:
 	
 readline_exit:
         mov     r5, #0
-	strb	r5, r0	/* terminate string */
+	strb	r5, [r0]	/* terminate string */
         pop     {pc}
+
+        .ltorg   /* literal pool for above code */
         
 
 uart_read:
@@ -71,6 +89,8 @@ uart_read:
 	blx	r3
 
 	pop	{pc}
+
+        .ltorg
 
 uart_puts:
 	push	{lr}
@@ -99,18 +119,5 @@ uart_puts_print:
 uart_puts_exit:
 	pop	{pc}
 
-        .align 12
-buffer:
-        .space BUFFER_SIZE
-
-        .set BUFFER_SIZE,4096
-        .align	4
-prompt: 
-        .asciz	"\r\necho> "
-
-        .align 4
-newline:     
-        .asciz "\r\n"
-
-.align	4
+        .ltorg
 
