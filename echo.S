@@ -1,5 +1,6 @@
 .text
-.set BUFFER_SIZE,4096
+#.set BUFFER_SIZE,4096
+.set BUFFER_SIZE,10
 
 .global _start
 _start:
@@ -28,9 +29,6 @@ echo:
         adr     r0, buffer
         bl      uart_puts
 
-        adr     r0, newline
-        bl      uart_puts
-
 @ loop
         b      echo
 
@@ -38,10 +36,6 @@ echo:
         .align	4
 prompt: 
         .asciz	"\r\necho> "
-
-        .align 4
-newline:     
-        .asciz "\r\n"
 
         .align 4
 buffer:
@@ -57,7 +51,9 @@ readline:
 # puts a zero at the end of the buffer to make it a "string"
 # returns the end of the string read (void *buffer) in r0
         push    {lr}
-	add	r4, r0, r1  /* r4 = buffer + max_bytes */
+        add     r4, r0, r1
+        ldr     r5, =BUFEND
+        str     r4, [r5] /* BUFEND = buffer + max_bytes */
         
 @ read 1 char
 readline_loop:
@@ -72,15 +68,19 @@ readline_loop:
 	beq	readline_exit
  
 	add	r0, r0, #1
-	cmp	r0, r4
+        ldr     r4, =BUFEND
+        ldr     r5, [r4]
+	cmp	r0, r5
 	blt	readline_loop
 	
 readline_exit:
-        mov     r5, #0
-	strb	r5, [r0]	/* terminate string */
+        mov     r4, #0
+	strb	r4, [r0]	/* terminate string */
         pop     {pc}
 
         .ltorg   /* literal pool for above code */
+
+        .int    BUFEND      /* index of where we are reading */
         
 
 uart_read:
