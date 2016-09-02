@@ -14,11 +14,29 @@ relocate_stack:
 
 demo:
         mov     r0, #0x08
-        bl      motor_pulse
+	bl	delay
+	bl	leds
+	bl	delay
+//	bl 	.
+//        bl      motor_pulse
         bl      reboot
 error:                          // if we didn't reboot, leave motor on
         bl      motor_on
         b       error
+
+.equ GPIO_CTRL_ADDR, 0xa0020000
+.equ GPIO_CTRL_MODE2, GPIO_CTRL_ADDR + 0x0c20
+.equ GPIO_CTRL_MODE2_IO16_GPIO16, (0 << 0)
+.equ GPIO_CTRL_MODE2_IO16_MASK, (0x7 << 4)
+.equ GPIO_CTRL_MODE2_IO18_GPIO18, (0 << 8)
+.equ GPIO_CTRL_MODE2_IO18_MASK, (0x7 << 8)
+
+leds:
+	ldr	r0, =GPIO_CTRL_MODE2
+//	ldr	r1, =(GPIO_CTRL_MODE2_IO16_GPIO16 | GPIO_CTRL_MODE2_IO16_MASK | GPIO_CTRL_MODE2_IO18_GPIO18 | GPIO_CTRL_MODE2_IO18_MASK)
+	ldr	r1, =(GPIO_CTRL_MODE2_IO16_GPIO16 | GPIO_CTRL_MODE2_IO16_MASK)
+	str	r1, [r0]
+	bx	lr
 
 .equ MOTOR_CTRL, 0xa07001b0
 .equ MOTOR_CTRL_OFF, 0x0422
