@@ -63,7 +63,8 @@ all: $(BUILD)/firmware.bin \
 	$(BUILD)/dump-rom-usb.bin \
 	$(BUILD)/usb-loader.bin \
 	$(BUILD)/mt6261-test.bin \
-	$(BUILD)/fernly-usb-loader
+	$(BUILD)/fernly-usb-loader \
+	$(BUILD)/echo.bin
 clean:
 	$(RM) -rf $(BUILD)
 
