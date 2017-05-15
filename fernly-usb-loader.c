@@ -23,7 +23,9 @@
 
 #define ASSERT(x) do { if ((x)) exit(1); } while(0)
 
-static const uint32_t mtk_config_offset = 0x80000000;
+//static const uint32_t mtk_config_offset = 0x80010000;
+//static const uint32_t mtk_config_offset = 0xF0200000;
+static const uint32_t mtk_config_offset = 0x20000000;
 static struct termios old_termios;
 const char prompt[] = "fernly>";
 
@@ -145,6 +147,7 @@ static int fernvale_txrx(int fd, void *b, int size) {
 		return -1;
 	}
 //	printf("Reading data: "); print_hex(response, size, 0);
+
 
 	if (memcmp(bfr, response, size)) {
 		fprintf(stderr, "Error: Response differs from command\n");
@@ -1576,17 +1579,38 @@ int main(int argc, char **argv) {
 	ASSERT(fernvale_hello(serfd));
 	cmd_end();
 
-	cmd_begin("Getting hardware version");
-	cmd_end_fmt("0x%04x", fernvale_read_reg16(serfd, mtk_config_offset));
+//	cmd_begin("Getting hardware version");
+//	cmd_end_fmt("0x%04x", fernvale_read_reg16(serfd, mtk_config_offset));
+        
+        uint32_t addr;
+//        for(addr=0x10200000; addr<0xFFFFFFFF; addr=addr+4) {
+//        44000000 initrd reads zeros for quite a while without crashing!
+//        11230000 msdc0@11230000 gives 0099, 0000, 0002, 0000 ...
+//        10000000 INFRACFG_AO@0x10000000 reads 0005
+//        10200400 MCUSYS_MISCCFG reads 0011, 0000, 000e
+//        BINGO BINGO BINGO!!!! 0x20000008 has 0x6735 I found the CONFIG_BASE!!!
+
+//        for(addr=0x20000000; addr<0xFFFFFFFF; addr=addr+4) {
+        for(addr=0x80000000; addr<0xFFFFFFFF; addr=addr+4) {
+            printf("0x%04x\t",addr);
+//            cmd_begin("read memory");
+            uint32_t value;
+            value = fernvale_read_reg32(serfd, addr);
+            print_hex(&value, 4, 0);
+//            cmd_end_fmt("0x%04x", fernvale_read_reg16(serfd, addr));
+        }
+        
 
 // CRAIG Hack to see what comes back for each "cmd"
 /*
 	uint8_t i;
 	for(i=0; i<0xff; i++) {
+//                printf("command %d\n", i);
+//                cmd_begin("sending command");
 		fernvale_send_cmd(serfd, i);
 	}
 	return;
-*/
+        */
 
 	cmd_begin("Getting chip ID");
 	cmd_end_fmt("0x%04x", fernvale_read_reg16(serfd, mtk_config_offset + 8));
