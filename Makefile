@@ -44,7 +44,8 @@ OBJ = $(addprefix $(BUILD)/, $(SRC_S:.S=.o) $(SRC_C:.c=.o))
 
 all: $(BUILD)/firmware.bin \
 	$(BUILD)/usb-loader.bin \
-	$(BUILD)/fernly-usb-loader
+	$(BUILD)/fernly-usb-loader \
+	$(BUILD)/led-on.bin
 clean:
 	$(RM) -rf $(BUILD)
 
