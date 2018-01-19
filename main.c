@@ -8,6 +8,9 @@
 
 #include "fernvale-pmic.h"
 
+// for craig test of led-on osmocom fw
+#include "fernvale-kbd.h"
+
 //#define AUTOMATED
 
 #if !defined(AUTOMATED)
@@ -186,9 +189,9 @@ static int list_registers(void)
 static int shell_run_command(char *line);
 static int do_init(void)
 {
-	serial_init();
+//	serial_init();
 
-	list_registers();
+//	list_registers();
 
 	/* Disable system watchdog */
 	writel(0x2200, 0xa0030000);
@@ -199,15 +202,17 @@ static int do_init(void)
 	/* Disable battery watchdog */
 	writew(0x2, PMIC_CTRL9);
 
-	scriptic_run("set_plls");
-	scriptic_run("enable_psram");
-	serial_puts("\n\nFernly shell\n");
-	shell_run_command("bl 5");
-	shell_run_command("lcd init");
-	shell_run_command("lcd tpd");
+//	scriptic_run("set_plls");
+//    scriptic_run("enable_psram");
+//    serial_puts("\n\nFernly shell\n");
+//	shell_run_command("bl 5");
+//	shell_run_command("lcd init");
+//	shell_run_command("lcd tpd");
 
 	/* Initialize the keypad */
-	scriptic_run("set_kbd");
+//	scriptic_run("set_kbd");
+
+    writeb(BIG_LED_ON, BIG_LED_ADDR);
 
 	return 0;
 }
@@ -504,8 +509,8 @@ int main(void)
 {
 	do_init();
 
-	while (1)
-		loop();
+//	while (1)
+//		loop();
 
 	return 0;
 }

@@ -1,5 +1,6 @@
 include mkenv.mk
 include magic.mk
+include local.mk
 
 CFLAGS = -march=armv5te -mfloat-abi=soft -Wall \
 	 -Os -ggdb -Iinclude -marm -fno-stack-protector
