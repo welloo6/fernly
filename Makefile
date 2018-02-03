@@ -44,6 +44,7 @@ OBJ = $(addprefix $(BUILD)/, $(SRC_S:.S=.o) $(SRC_C:.c=.o))
 
 all: $(BUILD)/firmware.bin \
 	$(BUILD)/usb-loader.bin \
+    $(BUILD)/led-on.bin \
 	$(BUILD)/fernly-usb-loader
 clean:
 	$(RM) -rf $(BUILD)
@@ -53,6 +54,9 @@ $(BUILD)/fernly-usb-loader: fernly-usb-loader.c sha1.c sha1.h
 
 $(BUILD)/usb-loader.bin: $(BUILD)/usb-loader.o
 	$(OBJCOPY) -S -O binary $(BUILD)/usb-loader.o $@
+
+$(BUILD)/led-on.bin: $(BUILD)/led-on.o
+	$(OBJCOPY) -S -O binary $(BUILD)/led-on.o $@
 
 HEADER_BUILD = $(BUILD)/genhdr
 $(BUILD)/firmware.bin: $(BUILD)/firmware.elf

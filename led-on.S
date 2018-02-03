@@ -8,6 +8,14 @@ disable_interrupts:
 	orr	r0, r0, r1
 	msr	cpsr_cxsf, r0
 
+led_on:
+    ldr r0, =0xa0700c80 // BIG_LED_ADDR
+    ldr r1, =0x00000003 // BIG_LED_ON
+    strb r1, [r0]
+loop:
+    b loop // infinite loop?
+    
+
 relocate_stack:
         ldr     r0, =0x7000cffc // stack_start
 	mov     sp, r0
